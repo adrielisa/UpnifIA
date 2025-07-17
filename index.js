@@ -19,7 +19,7 @@ info:
   version: 1.0.0
   description: API para crear prospectos en Upnify CRM
 servers:
-  - url: https://tu-servidor.com
+  - url: https://upnifia-production.up.railway.app
 paths:
   /crear-prospecto:
     post:
