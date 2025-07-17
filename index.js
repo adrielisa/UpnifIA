@@ -8,7 +8,7 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 
 // Configuration
-const tkSesion = 'P07Mjk2RjY5RTEtNkY4MC00MkI1LTkwOEQtNTRDOTRBRkE3MzdD';
+const tkSesion = 'P07N0RFQjQ0QkQtQzY5Ny00MTQwLUJBQzEtRjhEMDY0RTA2NDRB';
 const apiUrl = 'https://api.upnify.com/v4/prospectos';
 
 // OpenAPI Spec para conexión IA
@@ -99,7 +99,20 @@ paths:
 // Función para hacer request a Upnify
 function makeUpnifyRequest(payload) {
     return new Promise((resolve, reject) => {
-        const jsonPayload = JSON.stringify(payload);
+        // Convertir payload a form-urlencoded
+        const formData = new URLSearchParams();
+        for (const [key, value] of Object.entries(payload)) {
+            if (typeof value === 'object' && value !== null) {
+                // Para objetos anidados como "cp"
+                for (const [subKey, subValue] of Object.entries(value)) {
+                    formData.append(`${key}.${subKey}`, subValue || '');
+                }
+            } else {
+                formData.append(key, value || '');
+            }
+        }
+        
+        const formDataString = formData.toString();
         const url = new URL(apiUrl);
         
         const options = {
@@ -108,9 +121,9 @@ function makeUpnifyRequest(payload) {
             path: url.pathname,
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(jsonPayload),
-                'Authorization': `Bearer ${tkSesion}`,
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Length': Buffer.byteLength(formDataString),
+                'token': tkSesion,
                 'User-Agent': 'Node.js/UpnifIA'
             }
         };
@@ -144,7 +157,7 @@ function makeUpnifyRequest(payload) {
             reject(error);
         });
         
-        req.write(jsonPayload);
+        req.write(formDataString);
         req.end();
     });
 }
@@ -268,7 +281,24 @@ app.get('/', (req, res) => {
 });
 
 // Iniciar servidor
-app.listen(port, () => {
+const server = app.listen(port, () => {
     console.log(`Servidor corriendo en puerto ${port}`);
     console.log(`Documentación OpenAPI disponible en: http://localhost:${port}/openapi.yaml`);
+});
+
+// Manejo de señales de terminación
+process.on('SIGTERM', () => {
+    console.log('Recibida señal SIGTERM, cerrando servidor...');
+    server.close(() => {
+        console.log('Servidor cerrado correctamente');
+        process.exit(0);
+    });
+});
+
+process.on('SIGINT', () => {
+    console.log('Recibida señal SIGINT, cerrando servidor...');
+    server.close(() => {
+        console.log('Servidor cerrado correctamente');
+        process.exit(0);
+    });
 });
