@@ -10,6 +10,7 @@ app.use(express.json());
 // Configuration
 const tkSesion = 'P07N0RFQjQ0QkQtQzY5Ny00MTQwLUJBQzEtRjhEMDY0RTA2NDRB';
 const apiUrl = 'https://api.upnify.com/v4/prospectos';
+const reportesUrl = 'https://api.upnify.com/v4/reportesnv/ventas/realizadas';
 
 // OpenAPI Spec para conexión IA
 const openAPISpec = `
@@ -148,6 +149,105 @@ paths:
           description: Error en la solicitud
         '500':
           description: Error del servidor
+  /consultar-reportes:
+    get:
+      summary: Consultar reportes de ventas realizadas
+      operationId: consultarReportes
+      parameters:
+        - name: agrupacion
+          in: query
+          required: true
+          schema:
+            type: integer
+            enum: [1, 2, 3, 4, 5, 6, 17]
+            description: "Tipo de agrupación: 1=Por ejecutivo, 2=Por grupo, 3=Por línea, 4=Por origen, 5=Por país, 6=Por región, 17=Por industria"
+            example: 1
+        - name: periodicidad
+          in: query
+          required: true
+          schema:
+            type: integer
+            enum: [1, 2, 3, 4, 5, 6]
+            description: "Periodicidad: 1=Semestral, 2=Trimestral, 3=Bimestral, 4=Mensual, 5=Quincenal, 6=Semanal"
+            example: 4
+        - name: anio
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 2009
+            maximum: 2025
+            description: "Año del reporte (2009-2025)"
+            example: 2025
+        - name: impuestos
+          in: query
+          required: false
+          schema:
+            type: integer
+            enum: [0, 1]
+            description: "Incluir impuestos: 0=Excluir, 1=Incluir"
+            example: 0
+            default: 0
+      responses:
+        '200':
+          description: Reporte de ventas obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        indice:
+                          type: integer
+                          description: Índice del registro
+                        idPais:
+                          type: string
+                          description: ID del país
+                        idEstado:
+                          type: string
+                          description: ID del estado
+                        estado:
+                          type: string
+                          description: Nombre del estado
+                        moneda:
+                          type: string
+                          description: Moneda utilizada
+                        _TOT:
+                          type: number
+                          description: Total de ventas
+                      additionalProperties:
+                        type: number
+                        description: "Ventas por período. Los campos varían según la periodicidad: _TRI1-_TRI4 (trimestral), _ENE-_DIC (mensual), _SMN1-_SMN52 (semanal), etc."
+                  parametros:
+                    type: object
+                    properties:
+                      agrupacion:
+                        type: string
+                        description: Descripción de la agrupación utilizada
+                      periodicidad:
+                        type: string
+                        description: Descripción de la periodicidad utilizada
+                      anio:
+                        type: integer
+                        description: Año consultado
+                      impuestos:
+                        type: string
+                        description: Si se incluyen o excluyen impuestos
+                      estructuraCampos:
+                        type: string
+                        description: "Explicación de los campos de período: Trimestral=_TRI1 a _TRI4, Mensual=_ENE a _DIC, Semanal=_SMN1 a _SMN52, etc."
+        '400':
+          description: Error en los parámetros de la solicitud
+        '500':
+          description: Error del servidor
 `;
 
 // Función para hacer request a Upnify
@@ -212,6 +312,62 @@ function makeUpnifyRequest(payload) {
         });
         
         req.write(formDataString);
+        req.end();
+    });
+}
+
+// Función para hacer request GET a reportes de Upnify
+function makeUpnifyReportRequest(queryParams) {
+    return new Promise((resolve, reject) => {
+        const url = new URL(reportesUrl);
+        
+        // Agregar parámetros de consulta
+        Object.keys(queryParams).forEach(key => {
+            if (queryParams[key] !== undefined && queryParams[key] !== null) {
+                url.searchParams.append(key, queryParams[key]);
+            }
+        });
+        
+        const options = {
+            hostname: url.hostname,
+            port: 443,
+            path: url.pathname + url.search,
+            method: 'GET',
+            headers: {
+                'token': tkSesion,
+                'User-Agent': 'Node.js/UpnifIA'
+            }
+        };
+        
+        const req = https.request(options, (res) => {
+            let data = '';
+            
+            res.on('data', (chunk) => {
+                data += chunk;
+            });
+            
+            res.on('end', () => {
+                try {
+                    const jsonResponse = JSON.parse(data);
+                    resolve({
+                        statusCode: res.statusCode,
+                        headers: res.headers,
+                        data: jsonResponse
+                    });
+                } catch (error) {
+                    resolve({
+                        statusCode: res.statusCode,
+                        headers: res.headers,
+                        data: data
+                    });
+                }
+            });
+        });
+        
+        req.on('error', (error) => {
+            reject(error);
+        });
+        
         req.end();
     });
 }
@@ -361,6 +517,153 @@ app.post('/crear-prospecto', async (req, res) => {
     }
 });
 
+// Endpoint para consultar reportes
+app.get('/consultar-reportes', async (req, res) => {
+    try {
+        const { agrupacion, periodicidad, anio, impuestos = 0 } = req.query;
+        
+        // Validar parámetros obligatorios
+        if (!agrupacion) {
+            return res.status(400).json({
+                success: false,
+                message: "El parámetro 'agrupacion' es obligatorio",
+                error: "MISSING_REQUIRED_PARAMETER"
+            });
+        }
+        
+        if (!periodicidad) {
+            return res.status(400).json({
+                success: false,
+                message: "El parámetro 'periodicidad' es obligatorio",
+                error: "MISSING_REQUIRED_PARAMETER"
+            });
+        }
+        
+        if (!anio) {
+            return res.status(400).json({
+                success: false,
+                message: "El parámetro 'anio' es obligatorio",
+                error: "MISSING_REQUIRED_PARAMETER"
+            });
+        }
+        
+        // Validar valores de agrupación
+        const agrupacionesValidas = [1, 2, 3, 4, 5, 6, 17];
+        if (!agrupacionesValidas.includes(parseInt(agrupacion))) {
+            return res.status(400).json({
+                success: false,
+                message: "Agrupación inválida. Valores permitidos: 1=Por ejecutivo, 2=Por grupo, 3=Por línea, 4=Por origen, 5=Por país, 6=Por región, 17=Por industria",
+                error: "INVALID_AGRUPACION"
+            });
+        }
+        
+        // Validar valores de periodicidad
+        const periodicidadesValidas = [1, 2, 3, 4, 5, 6];
+        if (!periodicidadesValidas.includes(parseInt(periodicidad))) {
+            return res.status(400).json({
+                success: false,
+                message: "Periodicidad inválida. Valores permitidos: 1=Semestral, 2=Trimestral, 3=Bimestral, 4=Mensual, 5=Quincenal, 6=Semanal",
+                error: "INVALID_PERIODICIDAD"
+            });
+        }
+        
+        // Validar año
+        const anioNum = parseInt(anio);
+        if (anioNum < 2009 || anioNum > 2025) {
+            return res.status(400).json({
+                success: false,
+                message: "Año inválido. Debe estar entre 2009 y 2025",
+                error: "INVALID_YEAR"
+            });
+        }
+        
+        // Validar impuestos
+        const impuestosValidos = [0, 1];
+        if (!impuestosValidos.includes(parseInt(impuestos))) {
+            return res.status(400).json({
+                success: false,
+                message: "Valor de impuestos inválido. Valores permitidos: 0=Excluir, 1=Incluir",
+                error: "INVALID_IMPUESTOS"
+            });
+        }
+        
+        // Mapear valores para respuesta amigable
+        const agrupacionMap = {
+            1: 'Por ejecutivo',
+            2: 'Por grupo',
+            3: 'Por línea',
+            4: 'Por origen',
+            5: 'Por país',
+            6: 'Por región',
+            17: 'Por industria'
+        };
+        
+        const periodicidadMap = {
+            1: 'Semestral',
+            2: 'Trimestral',
+            3: 'Bimestral',
+            4: 'Mensual',
+            5: 'Quincenal',
+            6: 'Semanal'
+        };
+        
+        const impuestosMap = {
+            0: 'Excluir impuestos',
+            1: 'Incluir impuestos'
+        };
+        
+        // Mapear estructura de campos según periodicidad
+        const estructuraCamposMap = {
+            1: 'Campos: _SEM1, _SEM2 (semestres) + _TOT',
+            2: 'Campos: _TRI1, _TRI2, _TRI3, _TRI4 (trimestres) + _TOT',
+            3: 'Campos: _BIM1, _BIM2, _BIM3, _BIM4, _BIM5, _BIM6 (bimestres) + _TOT',
+            4: 'Campos: _ENE, _FEB, _MAR, _ABR, _MAY, _JUN, _JUL, _AGO, _SEP, _OCT, _NOV, _DIC (meses) + _TOT',
+            5: 'Campos: _QNA1, _QNA2, ... _QNA24 (quincenas) + _TOT',
+            6: 'Campos: _SMN1, _SMN2, ... _SMN52 (semanas) + _TOT'
+        };
+        
+        const queryParams = {
+            agrupacion: parseInt(agrupacion),
+            periodicidad: parseInt(periodicidad),
+            anio: anioNum,
+            impuestos: parseInt(impuestos)
+        };
+        
+        console.log('Consultando reportes con parámetros:', queryParams);
+        
+        const result = await makeUpnifyReportRequest(queryParams);
+        
+        if (result.statusCode === 200) {
+            res.json({
+                success: true,
+                message: 'Reporte obtenido exitosamente',
+                data: result.data,
+                parametros: {
+                    agrupacion: agrupacionMap[parseInt(agrupacion)],
+                    periodicidad: periodicidadMap[parseInt(periodicidad)],
+                    anio: anioNum,
+                    impuestos: impuestosMap[parseInt(impuestos)],
+                    estructuraCampos: estructuraCamposMap[parseInt(periodicidad)]
+                }
+            });
+        } else {
+            res.status(result.statusCode).json({
+                success: false,
+                message: 'Error al consultar el reporte',
+                error: result.data
+            });
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor',
+            error: error.message
+        });
+    }
+});
+
 // Servir OpenAPI
 app.get('/openapi.yaml', (req, res) => {
     res.type('text/yaml').send(openAPISpec);
@@ -373,26 +676,46 @@ app.get('/', (req, res) => {
         version: '1.0.0',
         endpoints: {
             'POST /crear-prospecto': 'Crear un nuevo prospecto en Upnify',
+            'GET /consultar-reportes': 'Consultar reportes de ventas realizadas',
             'GET /openapi.yaml': 'Documentación OpenAPI para conectar con IA'
         },
+        ejemplos: {
+            'crear-prospecto': {
+                nombre: 'Juan',
+                apellidos: 'Pérez',
+                correo: 'juan@empresa.com',
+                empresa: 'Tech Solutions',
+                telefono2: '5551234567'
+            },
+            'consultar-reportes': {
+                url: '/consultar-reportes?agrupacion=1&periodicidad=4&anio=2025&impuestos=0',
+                parametros: {
+                    agrupacion: '1=Por ejecutivo, 2=Por grupo, 3=Por línea, 4=Por origen, 5=Por país, 6=Por región, 17=Por industria',
+                    periodicidad: '1=Semestral, 2=Trimestral, 3=Bimestral, 4=Mensual, 5=Quincenal, 6=Semanal',
+                    anio: '2009-2025',
+                    impuestos: '0=Excluir, 1=Incluir'
+                },
+                nota: 'La estructura de campos en la respuesta cambia según la periodicidad: Trimestral=_TRI1-_TRI4, Mensual=_ENE-_DIC, Semanal=_SMN1-_SMN52, etc.'
+            }
+        },
         camposObligatorios: {
-            nombre: 'Nombre del prospecto (requerido)',
-            apellidos: 'Apellidos del prospecto (requerido)',
-            correo: 'Correo electrónico válido (requerido)'
+            'crear-prospecto': {
+                nombre: 'Nombre del prospecto (requerido)',
+                apellidos: 'Apellidos del prospecto (requerido)',
+                correo: 'Correo electrónico válido (requerido)'
+            },
+            'consultar-reportes': {
+                agrupacion: 'Tipo de agrupación (requerido)',
+                periodicidad: 'Periodicidad del reporte (requerido)',
+                anio: 'Año del reporte (requerido)'
+            }
         },
         camposOpcionales: [
             'telefono2', 'movil', 'empresa', 'puesto', 'calle', 'ciudad', 
             'idEstado', 'codigoPostal', 'titulo', 'sexo', 'url', 'colonia',
             'idMunicipio', 'facebook', 'twitter', 'skype', 'linkedIn', 
-            'googlePlus', 'etiquetas'
-        ],
-        ejemplo: {
-            nombre: 'Juan',
-            apellidos: 'Pérez',
-            correo: 'juan@empresa.com',
-            empresa: 'Tech Solutions',
-            telefono2: '5551234567'
-        }
+            'googlePlus', 'etiquetas', 'impuestos'
+        ]
     });
 });
 
