@@ -1,0 +1,19 @@
+{
+  "name": "upnifia-api",
+  "version": "1.0.0",
+  "description": "API para crear prospectos en Upnify CRM",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  },
+  "keywords": ["upnify", "api", "crm", "prospectos"],
+  "author": "",
+  "license": "ISC"
+}
