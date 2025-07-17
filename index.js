@@ -31,51 +31,105 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - nombre
+                - apellidos
+                - correo
               properties:
                 nombre:
                   type: string
-                  description: Nombre del prospecto
+                  description: Nombre del prospecto (OBLIGATORIO)
                   example: "Adriel"
+                  minLength: 1
                 apellidos:
                   type: string
-                  description: Apellidos del prospecto
+                  description: Apellidos del prospecto (OBLIGATORIO)
                   example: "Rodriguez"
+                  minLength: 1
                 correo:
                   type: string
-                  description: Correo electrónico del prospecto
+                  description: Correo electrónico del prospecto (OBLIGATORIO)
+                  format: email
                   example: "adriel4@gmail.com"
                 telefono2:
                   type: string
-                  description: Número de teléfono
+                  description: Número de teléfono (OPCIONAL)
                   example: "5551234567"
                 movil:
                   type: string
-                  description: Número de móvil
+                  description: Número de móvil (OPCIONAL)
                   example: "5551234567"
                 empresa:
                   type: string
-                  description: Empresa del prospecto
+                  description: Empresa del prospecto (OPCIONAL)
                   example: "Tech Solutions"
                 puesto:
                   type: string
-                  description: Puesto del prospecto
+                  description: Puesto del prospecto (OPCIONAL)
                   example: "Gerente de IT"
                 calle:
                   type: string
-                  description: Dirección del prospecto
+                  description: Dirección del prospecto (OPCIONAL)
                   example: "Av. Principal 123"
                 ciudad:
                   type: string
-                  description: Ciudad del prospecto
+                  description: Ciudad del prospecto (OPCIONAL)
                   example: "Ciudad de México"
                 idEstado:
                   type: string
-                  description: Estado del prospecto
+                  description: Estado del prospecto (OPCIONAL - usar códigos como CDMX, QROO, etc.)
                   example: "CDMX"
                 codigoPostal:
                   type: string
-                  description: Código postal
+                  description: Código postal (OPCIONAL)
                   example: "01000"
+                  pattern: "^[0-9]{5}$"
+                titulo:
+                  type: string
+                  description: Título profesional (OPCIONAL)
+                  example: "Ing."
+                sexo:
+                  type: string
+                  description: Sexo del prospecto (OPCIONAL - H para Hombre, M para Mujer)
+                  example: "H"
+                  enum: ["H", "M"]
+                url:
+                  type: string
+                  description: Sitio web personal o de empresa (OPCIONAL)
+                  format: uri
+                  example: "https://ejemplo.com"
+                colonia:
+                  type: string
+                  description: Colonia o barrio (OPCIONAL)
+                  example: "Centro"
+                idMunicipio:
+                  type: string
+                  description: ID del municipio (OPCIONAL)
+                  example: "1"
+                facebook:
+                  type: string
+                  description: Perfil de Facebook (OPCIONAL)
+                  example: "facebook.com/usuario"
+                twitter:
+                  type: string
+                  description: Perfil de Twitter (OPCIONAL)
+                  example: "twitter.com/usuario"
+                skype:
+                  type: string
+                  description: Usuario de Skype (OPCIONAL)
+                  example: "usuario.skype"
+                linkedIn:
+                  type: string
+                  description: Perfil de LinkedIn (OPCIONAL)
+                  example: "linkedin.com/in/usuario"
+                googlePlus:
+                  type: string
+                  description: Perfil de Google Plus (OPCIONAL)
+                  example: "plus.google.com/usuario"
+                etiquetas:
+                  type: string
+                  description: Etiquetas separadas por comas (OPCIONAL)
+                  example: "cliente,importante,tecnologia"
       responses:
         '200':
           description: Prospecto creado exitosamente
@@ -191,6 +245,49 @@ app.post('/crear-prospecto', async (req, res) => {
             tkEtiquetas = ""
         } = req.body;
 
+        // Validar campos obligatorios
+        if (!nombre || nombre.trim() === "") {
+            return res.status(400).json({
+                success: false,
+                message: "El campo 'nombre' es obligatorio",
+                error: "MISSING_REQUIRED_FIELD"
+            });
+        }
+
+        if (!apellidos || apellidos.trim() === "") {
+            return res.status(400).json({
+                success: false,
+                message: "El campo 'apellidos' es obligatorio",
+                error: "MISSING_REQUIRED_FIELD"
+            });
+        }
+
+        if (!correo || correo.trim() === "") {
+            return res.status(400).json({
+                success: false,
+                message: "El campo 'correo' es obligatorio",
+                error: "MISSING_REQUIRED_FIELD"
+            });
+        }
+
+        // Validar formato de correo básico
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(correo)) {
+            return res.status(400).json({
+                success: false,
+                message: "El formato del correo electrónico no es válido",
+                error: "INVALID_EMAIL_FORMAT"
+            });
+        }
+
+        console.log('Datos recibidos:', {
+            nombre: nombre.trim(),
+            apellidos: apellidos.trim(),
+            correo: correo.trim(),
+            empresa: empresa || 'No especificada',
+            telefono2: telefono2 || 'No especificado'
+        });
+
         // Payload base para Upnify
         const payload = {
             "choice_empresa": "",
@@ -273,9 +370,28 @@ app.get('/openapi.yaml', (req, res) => {
 app.get('/', (req, res) => {
     res.json({
         message: 'UpnifIA API funcionando correctamente',
+        version: '1.0.0',
         endpoints: {
             'POST /crear-prospecto': 'Crear un nuevo prospecto en Upnify',
             'GET /openapi.yaml': 'Documentación OpenAPI para conectar con IA'
+        },
+        camposObligatorios: {
+            nombre: 'Nombre del prospecto (requerido)',
+            apellidos: 'Apellidos del prospecto (requerido)',
+            correo: 'Correo electrónico válido (requerido)'
+        },
+        camposOpcionales: [
+            'telefono2', 'movil', 'empresa', 'puesto', 'calle', 'ciudad', 
+            'idEstado', 'codigoPostal', 'titulo', 'sexo', 'url', 'colonia',
+            'idMunicipio', 'facebook', 'twitter', 'skype', 'linkedIn', 
+            'googlePlus', 'etiquetas'
+        ],
+        ejemplo: {
+            nombre: 'Juan',
+            apellidos: 'Pérez',
+            correo: 'juan@empresa.com',
+            empresa: 'Tech Solutions',
+            telefono2: '5551234567'
         }
     });
 });
