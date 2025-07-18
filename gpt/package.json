@@ -1,0 +1,16 @@
+{
+    "name": "upnifia-gpt-api",
+    "version": "1.0.0",
+    "description": "API REST para conectar Upnify CRM con GPT",
+    "main": "server-gpt.js",
+    "scripts": {
+        "start": "node server-gpt.js",
+        "dev": "node server-gpt.js"
+    },
+    "dependencies": {
+        "express": "^4.18.2"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}
