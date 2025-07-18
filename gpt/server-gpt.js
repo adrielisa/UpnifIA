@@ -679,6 +679,7 @@ app.post('/crear-oportunidad', (req, res) => {
 app.listen(port, '0.0.0.0', () => {
     console.log(`🚀 UpnifIA GPT API iniciado en puerto ${port}`);
     console.log(`📅 Timestamp: ${new Date().toISOString()}`);
-    console.log(`🔑 Token configurado: ${tkSesion ? 'SÍ' : 'NO'}`);
+    console.log(`🔑 Modo: Token dinámico por usuario`);
+    console.log(`📝 Instrucción: Cada usuario debe proporcionar su tkSesion`);
     console.log(`🌐 Health check: http://localhost:${port}/`);
 });
