@@ -4,7 +4,7 @@ const app = express();
 const port = 3001;
 
 // Token de sesión de Upnify
-const tkSesion = 'P07N0RFQjQ0QkQtQzY5Ny00MTQwLUJBQzEtRjhEMDY0RTA2NDRB';
+const tkSesion = 'P07QUQ0QzVFOTYtMjdGMC00NkI2LTgwNzEtOUExMjk2QTgyNjc4';
 const apiUrl = 'https://api.upnify.com/v4';
 
 app.use(express.json());
