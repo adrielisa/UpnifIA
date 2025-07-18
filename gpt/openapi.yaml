@@ -10,7 +10,7 @@ paths:
     post:
       summary: Crear prospecto en Upnify CRM con datos básicos
       description: Crea un nuevo prospecto con información esencial. Los campos adicionales (empresa, puesto, etiquetas, fase, etc.) se asignan automáticamente con valores por defecto de Upnify.
-      operationId: crearProspecto
+      operationId: crearProspectoCompleto
       requestBody:
         required: true
         content:
