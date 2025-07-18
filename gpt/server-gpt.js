@@ -33,31 +33,50 @@ app.get('/', (req, res) => {
     });
 });
 
-// 🔹 Servir el archivo OpenAPI para ChatGPT
+// 🔹 Servir el archivo OpenAPI para ChatGPT con cache-busting
 app.get('/openapi.yaml', (req, res) => {
-    console.log('📄 Serving OpenAPI specification...');
+    console.log('📄 Serving OpenAPI specification v1.0.2 with tkSesion support...');
     const openapiPath = path.join(__dirname, 'openapi.yaml');
     
     if (fs.existsSync(openapiPath)) {
         res.setHeader('Content-Type', 'application/x-yaml');
         res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        res.setHeader('X-OpenAPI-Version', '1.0.2');
+        res.setHeader('X-Last-Modified', new Date().toISOString());
         res.sendFile(openapiPath);
     } else {
         res.status(404).json({ error: 'OpenAPI file not found' });
     }
 });
 
-// 🔹 Servir el archivo OpenAPI para ChatGPT
-app.get('/openapi.yaml', (req, res) => {
-    console.log('📄 Serving OpenAPI specification...');
+// 🔹 Endpoint de debugging para verificar versión del OpenAPI
+app.get('/openapi-debug', (req, res) => {
     const openapiPath = path.join(__dirname, 'openapi.yaml');
     
     if (fs.existsSync(openapiPath)) {
-        res.setHeader('Content-Type', 'application/x-yaml');
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.sendFile(openapiPath);
+        const content = fs.readFileSync(openapiPath, 'utf8');
+        const versionMatch = content.match(/version:\s*([^\n]+)/);
+        const version = versionMatch ? versionMatch[1].trim() : 'unknown';
+        
+        res.json({
+            status: 'OK',
+            openapi_version: version,
+            file_exists: true,
+            file_path: openapiPath,
+            timestamp: new Date().toISOString(),
+            content_preview: content.substring(0, 500) + '...',
+            tkSesion_found: content.includes('tkSesion'),
+            lines_count: content.split('\n').length
+        });
     } else {
-        res.status(404).json({ error: 'OpenAPI file not found' });
+        res.status(404).json({ 
+            error: 'OpenAPI file not found',
+            file_path: openapiPath,
+            timestamp: new Date().toISOString()
+        });
     }
 });
 
