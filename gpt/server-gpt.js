@@ -25,6 +25,8 @@ app.get('/', (req, res) => {
             'GET /consultar-ventas - Consultar ventas con filtros flexibles',
             'GET /consultar-cobros-pendientes - Consultar cobros pendientes',
             'GET /consultar-prospectos-recientes - Consultar prospectos con filtros de período y ejecutivo',
+            'GET /buscar-contactos - Buscar prospectos y clientes por nombre, correo o teléfono',
+            'POST /crear-oportunidad - Crear oportunidad para un prospecto',
             'GET /test-upnify - Test de conectividad con Upnify'
         ]
     });
@@ -381,6 +383,213 @@ function getPeriodoDescripcion(periodo) {
         default: return `Período ${periodo}`;
     }
 }
+
+// 🔹 Buscar contactos (prospectos y clientes) por nombre, correo o teléfono
+app.get('/buscar-contactos', (req, res) => {
+    const buscar = req.query.buscar;
+    const cantidadRegistros = req.query.cantidadRegistros || 10;
+    
+    if (!buscar) {
+        return res.status(400).json({ 
+            error: 'El parámetro "buscar" es obligatorio',
+            mensaje: 'Proporciona un nombre, correo o teléfono para buscar'
+        });
+    }
+    
+    console.log(`🔍 Buscando contactos: "${buscar}" - Límite: ${cantidadRegistros}`);
+    
+    // Construir URL con filtros específicos para prospectos y clientes
+    const secciones = ',prospectos,clientes';
+    const url = `https://api.upnify.com/v4/sistema/buscar?buscar=${encodeURIComponent(buscar)}&cantidadRegistros=${cantidadRegistros}&secciones=${encodeURIComponent(secciones)}`;
+    
+    console.log(`🔗 URL de búsqueda: ${url}`);
+    
+    https.get(url, { 
+        headers: { 
+            'token': tkSesion,
+            'User-Agent': 'UpnifIA/1.0'
+        } 
+    }, response => {
+        let data = '';
+        response.on('data', chunk => data += chunk);
+        response.on('end', () => {
+            try {
+                const resultados = JSON.parse(data);
+                
+                if (!Array.isArray(resultados) || resultados.length < 2) {
+                    return res.json({
+                        termino: buscar,
+                        total: 0,
+                        resumen: { prospectos: 0, clientes: 0 },
+                        contactos: [],
+                        mensaje: 'No se encontraron resultados'
+                    });
+                }
+                
+                // resultados[0] contiene el resumen, resultados[1] contiene los datos
+                const resumen = resultados[0][0] || {};
+                const contactosRaw = resultados[1] || [];
+                
+                // Filtrar y formatear solo prospectos y clientes
+                const contactos = contactosRaw
+                    .filter(item => item.seccion === 'prospectos' || item.seccion === 'clientes')
+                    .map(contacto => ({
+                        seccion: contacto.seccion,
+                        tkProspecto: contacto.tkProspecto,
+                        contacto: contacto.contacto,
+                        correo: contacto.correo,
+                        telefono: contacto.telefono,
+                        movil: contacto.movil,
+                        ejecutivo: contacto.ejecutivo,
+                        ejecutivoIniciales: contacto.ejecutivoIniciales,
+                        empresa: contacto.empresa || '',
+                        // Generar un identificador único para cada contacto
+                        id: `${contacto.seccion}-${contacto.tkProspecto}`
+                    }));
+                
+                const resultado = {
+                    termino: buscar,
+                    total: contactos.length,
+                    resumen: {
+                        prospectos: resumen.prospectos || 0,
+                        clientes: resumen.clientes || 0
+                    },
+                    contactos: contactos,
+                    mensaje: contactos.length > 1 
+                        ? `Se encontraron ${contactos.length} contactos. Para crear una oportunidad, especifica el número de celular, correo o apellidos para ser más preciso.`
+                        : contactos.length === 1 
+                            ? 'Se encontró 1 contacto exacto'
+                            : 'No se encontraron contactos'
+                };
+                
+                console.log(`✅ Búsqueda completada: ${resultado.total} contactos encontrados`);
+                res.json(resultado);
+                
+            } catch (error) {
+                console.error('❌ Error parsing búsqueda:', error);
+                res.status(500).json({ 
+                    error: 'Error processing search results',
+                    details: error.message 
+                });
+            }
+        });
+    }).on('error', error => {
+        console.error('❌ Error en búsqueda:', error);
+        res.status(500).json({ 
+            error: 'Error connecting to Upnify search API',
+            details: error.message 
+        });
+    });
+});
+
+// 🔹 Crear oportunidad para un prospecto
+app.post('/crear-oportunidad', (req, res) => {
+    const { concepto, tkProspecto, monto, comision } = req.body;
+    
+    console.log('💼 Intentando crear oportunidad:', {
+        concepto: concepto,
+        tkProspecto: tkProspecto,
+        monto: monto,
+        comision: comision
+    });
+    
+    if (!concepto || !tkProspecto || !monto || comision === undefined) {
+        console.log('❌ Faltan campos obligatorios');
+        return res.status(400).json({ 
+            success: false, 
+            error: 'concepto, tkProspecto, monto y comision son obligatorios' 
+        });
+    }
+    
+    // Calcular comisionMonto automáticamente
+    const comisionMonto = parseFloat(monto) * parseFloat(comision);
+    
+    // Valores por defecto según tu especificación
+    const payload = {
+        'cp.fechaDeEntrega': '',
+        concepto: concepto,
+        tkFase: 'OFAS-F2481C74-02F3-435D-A139-A90EDC05E2E9',
+        tkLinea: 'LINP-E302A7F3-C8CD-489B-B9BF-67412CB62D37', 
+        tkMoneda: 'MON-ED434B3A-A165-4215-94E5-577327C2EF5E',
+        monto: parseFloat(monto),
+        tipoCambio: 1,
+        comision: parseFloat(comision),
+        comisionMonto: comisionMonto,
+        cierreEstimado: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 días desde hoy
+        tkCerteza: 'CER-42A55CB2-776D-49BC-9AAF-185561FBE167',
+        cantidad: '',
+        tkProspecto: tkProspecto,
+        cp: JSON.stringify({ fechaDeEntrega: '' })
+    };
+    
+    console.log('📝 Payload para oportunidad:', payload);
+    
+    const formData = new URLSearchParams();
+    for (const [key, value] of Object.entries(payload)) {
+        if (value !== undefined && value !== null) {
+            formData.append(key, value);
+        }
+    }
+
+    const options = {
+        hostname: 'api.upnify.com',
+        path: '/v4/oportunidades',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': Buffer.byteLength(formData.toString()),
+            'token': tkSesion,
+            'User-Agent': 'UpnifIA/1.0'
+        }
+    };
+
+    const request = https.request(options, response => {
+        let data = '';
+        console.log(`📡 Upnify response status: ${response.statusCode}`);
+        
+        response.on('data', chunk => data += chunk);
+        response.on('end', () => {
+            try {
+                const jsonResponse = JSON.parse(data);
+                console.log('✅ Oportunidad creada exitosamente');
+                
+                res.json({
+                    success: true,
+                    status: response.statusCode,
+                    oportunidad: jsonResponse,
+                    detalles: {
+                        concepto: concepto,
+                        monto: parseFloat(monto),
+                        comision: parseFloat(comision),
+                        comisionMonto: comisionMonto,
+                        tkProspecto: tkProspecto
+                    }
+                });
+                
+            } catch (error) {
+                console.error('❌ Error parsing oportunidad response:', error);
+                res.status(500).json({
+                    success: false,
+                    error: 'Error parsing Upnify response',
+                    statusCode: response.statusCode,
+                    rawData: data.substring(0, 500) + '...'
+                });
+            }
+        });
+    });
+
+    request.on('error', error => {
+        console.error('❌ Error creando oportunidad:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            code: error.code
+        });
+    });
+
+    request.write(formData.toString());
+    request.end();
+});
 
 // Iniciar servidor
 app.listen(port, '0.0.0.0', () => {

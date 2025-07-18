@@ -351,3 +351,160 @@ paths:
                         archivado:
                           type: integer
                           description: 1 si está archivado, 0 si no
+  /buscar-contactos:
+    get:
+      summary: Buscar prospectos y clientes por nombre, correo o teléfono
+      operationId: buscarContactos
+      parameters:
+        - name: buscar
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Término de búsqueda (nombre, correo, teléfono)
+        - name: cantidadRegistros
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          description: Cantidad máxima de registros a devolver
+      responses:
+        '200':
+          description: Resultados de búsqueda de contactos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  termino:
+                    type: string
+                    description: Término de búsqueda utilizado
+                  total:
+                    type: integer
+                    description: Total de contactos encontrados
+                  resumen:
+                    type: object
+                    properties:
+                      prospectos:
+                        type: integer
+                        description: Cantidad de prospectos encontrados
+                      clientes:
+                        type: integer
+                        description: Cantidad de clientes encontrados
+                  contactos:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        seccion:
+                          type: string
+                          enum: ["prospectos", "clientes"]
+                          description: Tipo de contacto
+                        tkProspecto:
+                          type: string
+                          description: Token único del contacto
+                        contacto:
+                          type: string
+                          description: Nombre completo del contacto
+                        correo:
+                          type: string
+                          description: Correo electrónico
+                        telefono:
+                          type: string
+                          description: Teléfono principal
+                        movil:
+                          type: string
+                          description: Teléfono móvil
+                        ejecutivo:
+                          type: string
+                          description: Nombre del ejecutivo asignado
+                        ejecutivoIniciales:
+                          type: string
+                          description: Iniciales del ejecutivo
+                        empresa:
+                          type: string
+                          description: Empresa del contacto
+                        id:
+                          type: string
+                          description: Identificador único del contacto
+                  mensaje:
+                    type: string
+                    description: Mensaje informativo sobre los resultados
+  /crear-oportunidad:
+    post:
+      summary: Crear oportunidad para un prospecto
+      operationId: crearOportunidad
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [concepto, tkProspecto, monto, comision]
+              properties:
+                concepto:
+                  type: string
+                  description: Descripción de la oportunidad
+                  example: "Subscripción Netflix"
+                tkProspecto:
+                  type: string
+                  description: Token del prospecto para quien crear la oportunidad
+                  example: "P-10153545-234C-4C10-B666-8877D29433CA"
+                monto:
+                  type: number
+                  minimum: 0
+                  description: Monto de la oportunidad
+                  example: 100
+                comision:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                  description: Porcentaje de comisión (0.05 = 5%)
+                  example: 0.05
+      responses:
+        '200':
+          description: Oportunidad creada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: Indica si la creación fue exitosa
+                  status:
+                    type: integer
+                    description: Código de estado HTTP
+                  oportunidad:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code:
+                          type: integer
+                        msg:
+                          type: string
+                        details:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              tkOportunidad:
+                                type: string
+                                description: Token de la oportunidad creada
+                  detalles:
+                    type: object
+                    properties:
+                      concepto:
+                        type: string
+                      monto:
+                        type: number
+                      comision:
+                        type: number
+                      comisionMonto:
+                        type: number
+                        description: Monto de comisión calculado automáticamente
+                      tkProspecto:
+                        type: string
