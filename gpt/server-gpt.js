@@ -244,12 +244,17 @@ app.get('/consultar-prospectos', (req, res) => {
     });
 });
 
-// 🔹 Consultar ventas actuales
+// 🔹 Consultar ventas con filtros flexibles
 app.get('/consultar-ventas', (req, res) => {
-    const year = new Date().getFullYear();
-    console.log(`📊 Consultando ventas del año ${year}...`);
+    // Parámetros con valores por defecto
+    const agrupacion = req.query.agrupacion || 1; // Por ejecutivo por defecto
+    const periodicidad = req.query.periodicidad || 4; // Mensual por defecto
+    const anio = req.query.anio || new Date().getFullYear(); // Año actual por defecto
+    const impuestos = req.query.impuestos !== undefined ? req.query.impuestos : 0; // Sin impuestos por defecto
     
-    const url = `https://api.upnify.com/v4/reportesnv/ventas/realizadas?agrupacion=1&periodicidad=4&anio=${year}`;
+    console.log(`📊 Consultando ventas - Año: ${anio}, Agrupación: ${agrupacion}, Periodicidad: ${periodicidad}, Impuestos: ${impuestos}`);
+    
+    const url = `https://api.upnify.com/v4/reportesnv/ventas/realizadas?agrupacion=${agrupacion}&periodicidad=${periodicidad}&anio=${anio}&impuestos=${impuestos}`;
     
     https.get(url, { 
         headers: { 
@@ -262,7 +267,7 @@ app.get('/consultar-ventas', (req, res) => {
         response.on('end', () => {
             try {
                 const jsonData = JSON.parse(data);
-                console.log(`✅ Reporte de ventas obtenido`);
+                console.log(`✅ Reporte de ventas obtenido - ${jsonData.length || 0} registros`);
                 res.json(jsonData);
             } catch (error) {
                 console.error('❌ Error parsing ventas:', error);
