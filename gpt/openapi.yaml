@@ -4,12 +4,12 @@ info:
   version: 1.0.1
   description: API REST para crear prospectos y consultar ventas desde GPT.
 servers:
-  - url: http://localhost:3001
+  - url: https://upnifia-production.up.railway.app
 paths:
   /crear-prospecto-completo:
     post:
-      summary: Crear prospecto con todos los campos
-      operationId: crearProspectoCompleto
+      summary: Crear prospecto en Upnify CRM
+      operationId: crearProspecto
       requestBody:
         required: true
         content:
