@@ -1,0 +1,21 @@
+{
+  "schema_version": "v1alpha",
+  "name_for_human": "UpnifIA",
+  "name_for_model": "upnifia",
+  "description_for_human": "Conecta prospectos y ventas de Upnify con IA.",
+  "description_for_model": "UpnifIA connector to Upnify CRM for smart assistants.",
+  "contact_email": "tu_correo@empresa.com",
+  "legal_info_url": "https://upnify.com/politicas-de-privacidad",
+  "auth": { "type": "none" },
+  "api": { "type": "mcp", "url": "http://localhost:3000" },
+  "resources": [
+    { "name": "prospectos_diarios", "description": "Lista prospectos de hoy", "type": "json" },
+    { "name": "ventas_mensuales", "description": "Ventas del mes", "type": "json" }
+  ],
+  "tools": [
+    { "name": "crear_prospecto", "description": "Crear prospecto", "input_schema": { "type": "object", "properties": { "nombre": { "type": "string" }, "apellidos": { "type": "string" }, "correo": { "type": "string" } }, "required": ["nombre", "apellidos", "correo"] } }
+  ],
+  "prompts": [
+    { "name": "mensaje_cliente_casual", "description": "Saludo casual para cliente", "input_schema": { "type": "object", "properties": { "nombre": { "type": "string" } }, "required": ["nombre"] } }
+  ]
+}
