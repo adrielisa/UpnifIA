@@ -8,7 +8,7 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 // Token de sesión de Upnify (mejor usar variable de entorno)
-const tkSesion = process.env.UPNIFY_TOKEN || 'P07QUQ0QzVFOTYtMjdGMC00NkI2LTgwNzEtOUExMjk2QTgyNjc4';
+const tkSesion = process.env.UPNIFY_TOKEN || 'P07RTgwMkQ4RUMtN0I5RC00QUMyLTlFQzMtQ0MwRDY4MzVDMTE5';
 const apiUrl = 'https://api.upnify.com/v4';
 
 app.use(express.json());
