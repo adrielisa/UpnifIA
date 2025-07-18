@@ -23,7 +23,8 @@ app.get('/', (req, res) => {
         endpoints: [
             'POST /crear-prospecto-completo - Crear prospecto en Upnify',
             'GET /consultar-prospectos - Consultar prospectos del día',
-            'GET /consultar-ventas - Consultar ventas mensuales',
+            'GET /consultar-ventas - Consultar ventas con filtros flexibles',
+            'GET /consultar-cobros-pendientes - Consultar cobros pendientes',
             'GET /test-upnify - Test de conectividad con Upnify'
         ]
     });
@@ -276,6 +277,40 @@ app.get('/consultar-ventas', (req, res) => {
         });
     }).on('error', error => {
         console.error('❌ Error consultando ventas:', error);
+        res.status(500).json({ error: error.message });
+    });
+});
+
+// 🔹 Consultar cobros pendientes con filtros
+app.get('/consultar-cobros-pendientes', (req, res) => {
+    // Parámetros con valores por defecto
+    const agrupacion = req.query.agrupacion || 1; // Por ejecutivo por defecto
+    const periodicidad = req.query.periodicidad || 4; // Mensual por defecto
+    
+    console.log(`💰 Consultando cobros pendientes - Agrupación: ${agrupacion}, Periodicidad: ${periodicidad}`);
+    
+    const url = `https://api.upnify.com/v4/reportesnv/clientes/cobrospendientes?agrupacion=${agrupacion}&periodicidad=${periodicidad}`;
+    
+    https.get(url, { 
+        headers: { 
+            'token': tkSesion,
+            'User-Agent': 'UpnifIA/1.0'
+        } 
+    }, response => {
+        let data = '';
+        response.on('data', chunk => data += chunk);
+        response.on('end', () => {
+            try {
+                const jsonData = JSON.parse(data);
+                console.log(`✅ Reporte de cobros pendientes obtenido - ${jsonData.length || 0} registros`);
+                res.json(jsonData);
+            } catch (error) {
+                console.error('❌ Error parsing cobros pendientes:', error);
+                res.status(500).json({ error: 'Error parsing response' });
+            }
+        });
+    }).on('error', error => {
+        console.error('❌ Error consultando cobros pendientes:', error);
         res.status(500).json({ error: error.message });
     });
 });

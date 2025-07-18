@@ -136,3 +136,69 @@ paths:
                 items:
                   type: object
                   description: Registro de ventas con campos dinámicos según periodicidad
+  /consultar-cobros-pendientes:
+    get:
+      summary: Consultar cobros pendientes con filtros
+      operationId: consultarCobrosPendientes
+      parameters:
+        - name: agrupacion
+          in: query
+          schema:
+            type: integer
+            enum: [1, 2, 3, 4, 5, 6]
+            default: 1
+          description: |
+            Tipo de agrupación:
+            - 1: Por ejecutivo
+            - 2: Por grupo  
+            - 3: Por línea
+            - 4: Por origen
+            - 5: Por país
+            - 6: Por región
+        - name: periodicidad
+          in: query
+          schema:
+            type: integer
+            enum: [0, 1, 2, 3, 4, 5, 6]
+            default: 4
+          description: |
+            Periodicidad del reporte:
+            - 0: Anual
+            - 1: Semestral
+            - 2: Trimestral
+            - 3: Bimestral
+            - 4: Mensual
+            - 5: Quincenal
+            - 6: Semanal
+      responses:
+        '200':
+          description: Reporte de cobros pendientes agrupado según filtros
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    indice:
+                      type: integer
+                    idPais:
+                      type: string
+                    idEstado:
+                      type: string
+                    estado:
+                      type: string
+                    moneda:
+                      type: string
+                    vencido:
+                      type: number
+                      description: Monto vencido
+                    _P1:
+                      type: number
+                      description: Período 1
+                    _PF:
+                      type: number
+                      description: Período final
+                    _TOT:
+                      type: number
+                      description: Total
