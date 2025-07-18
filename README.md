@@ -2,7 +2,7 @@
 
 Este proyecto conecta **Upnify CRM** con **Inteligencia Artificial** de dos formas complementarias:
 
-<✅ **Claude Agents** y futuros asistentes usando MCP (Model Context Protocol)
+<**Claude Agents** y futuros asistentes usando MCP (Model Context Protocol)
 
 ---
 
