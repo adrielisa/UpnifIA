@@ -75,7 +75,7 @@ node server-gpt.js
 #### 2. Crear GPT personalizado
 
 1. Ve a: https://chat.openai.com/create
-2. **Configura tu GPT:**
+2. **Configura GPT:**
 
    - **Nombre:** "Upnify Assistant"
    - **Descripción:** "Asistente para gestionar prospectos y ventas en Upnify CRM"
