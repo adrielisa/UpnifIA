@@ -202,3 +202,152 @@ paths:
                     _TOT:
                       type: number
                       description: Total
+  /consultar-prospectos-recientes:
+    get:
+      summary: Consultar prospectos con filtros de período y ejecutivo
+      operationId: consultarProspectosRecientes
+      parameters:
+        - name: pagina
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Número de página para paginación
+        - name: cantidadRegistros
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Cantidad de registros por página
+        - name: periodo
+          in: query
+          schema:
+            type: string
+            enum: ["1", "5", "8"]
+          description: |
+            Filtro por período de tiempo (usar parámetros de Upnify):
+            - 1: Prospectos de hoy
+            - 5: Prospectos del mes actual
+            - 8: Prospectos del año actual
+            - Sin especificar: Todos los períodos
+        - name: tkUsuario
+          in: query
+          schema:
+            type: string
+          description: |
+            Filtro por ejecutivo:
+            - "*": Ver prospectos de todos los ejecutivos
+            - Sin especificar: Solo mis prospectos
+            - Token específico: Prospectos de un ejecutivo específico
+      responses:
+        '200':
+          description: Lista de prospectos con filtros aplicados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: Total de prospectos obtenidos
+                  pagina:
+                    type: integer
+                    description: Página actual
+                  cantidadRegistros:
+                    type: integer
+                    description: Registros por página
+                  filtros:
+                    type: object
+                    properties:
+                      periodo:
+                        type: string
+                        description: Descripción del período aplicado
+                      ejecutivo:
+                        type: string
+                        description: Descripción del filtro de ejecutivo aplicado
+                  prospectos:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        tkProspecto:
+                          type: string
+                          description: Token único del prospecto
+                        nombre:
+                          type: string
+                          description: Nombre del prospecto
+                        apellidos:
+                          type: string
+                          description: Apellidos del prospecto
+                        contacto:
+                          type: string
+                          description: Nombre completo de contacto
+                        correo:
+                          type: string
+                          description: Correo electrónico
+                        telefono:
+                          type: string
+                          description: Teléfono principal
+                        movil:
+                          type: string
+                          description: Teléfono móvil
+                        fechaContacto:
+                          type: string
+                          format: date-time
+                          description: Fecha de primer contacto
+                        fechaUltimaModificacion:
+                          type: string
+                          format: date-time
+                          description: Fecha de última modificación
+                        ejecutivoNombre:
+                          type: string
+                          description: Nombre del ejecutivo asignado
+                        ultimoContacto:
+                          type: string
+                          description: Descripción del último contacto
+                        ultimoContactoFechaHora:
+                          type: string
+                          format: date-time
+                          description: Fecha del último contacto
+                        fase:
+                          type: string
+                          description: Fase actual del prospecto
+                        faseColor:
+                          type: string
+                          description: Color de la fase
+                        origen:
+                          type: string
+                          description: Origen del prospecto
+                        pais:
+                          type: string
+                          description: País del prospecto
+                        estado:
+                          type: string
+                          description: Estado/provincia del prospecto
+                        empresa:
+                          type: string
+                          description: Empresa del prospecto
+                        industria:
+                          type: string
+                          description: Industria o sector
+                        tipo:
+                          type: string
+                          description: Tipo de prospecto
+                        gasto:
+                          type: number
+                          description: Gasto estimado
+                        periodo:
+                          type: string
+                          description: Período de gasto
+                        esCliente:
+                          type: integer
+                          description: 1 si es cliente, 0 si no
+                        descartado:
+                          type: integer
+                          description: 1 si está descartado, 0 si no
+                        archivado:
+                          type: integer
+                          description: 1 si está archivado, 0 si no

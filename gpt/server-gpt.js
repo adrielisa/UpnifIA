@@ -22,9 +22,9 @@ app.get('/', (req, res) => {
         timestamp: new Date().toISOString(),
         endpoints: [
             'POST /crear-prospecto-completo - Crear prospecto en Upnify',
-            'GET /consultar-prospectos - Consultar prospectos del día',
             'GET /consultar-ventas - Consultar ventas con filtros flexibles',
             'GET /consultar-cobros-pendientes - Consultar cobros pendientes',
+            'GET /consultar-prospectos-recientes - Consultar prospectos con filtros de período y ejecutivo',
             'GET /test-upnify - Test de conectividad con Upnify'
         ]
     });
@@ -207,44 +207,6 @@ app.post('/crear-prospecto-completo', (req, res) => {
     request.end();
 });
 
-// 🔹 Consultar prospectos del día
-app.get('/consultar-prospectos', (req, res) => {
-    console.log('📋 Consultando prospectos del día...');
-    
-    const options = {
-        hostname: 'api.upnify.com',
-        path: '/v4/prospectos?desde=HOY&hasta=HOY',
-        method: 'GET',
-        headers: {
-            'token': tkSesion,
-            'User-Agent': 'UpnifIA/1.0'
-        }
-    };
-
-    https.get(`https://api.upnify.com/v4/prospectos?desde=HOY&hasta=HOY`, { 
-        headers: { 
-            'token': tkSesion,
-            'User-Agent': 'UpnifIA/1.0'
-        } 
-    }, response => {
-        let data = '';
-        response.on('data', chunk => data += chunk);
-        response.on('end', () => {
-            try {
-                const jsonData = JSON.parse(data);
-                console.log(`✅ Prospectos obtenidos: ${jsonData.length || 0}`);
-                res.json(jsonData);
-            } catch (error) {
-                console.error('❌ Error parsing prospectos:', error);
-                res.status(500).json({ error: 'Error parsing response' });
-            }
-        });
-    }).on('error', error => {
-        console.error('❌ Error consultando prospectos:', error);
-        res.status(500).json({ error: error.message });
-    });
-});
-
 // 🔹 Consultar ventas con filtros flexibles
 app.get('/consultar-ventas', (req, res) => {
     // Parámetros con valores por defecto
@@ -314,6 +276,111 @@ app.get('/consultar-cobros-pendientes', (req, res) => {
         res.status(500).json({ error: error.message });
     });
 });
+
+// 🔹 Consultar prospectos con filtros de período y ejecutivo
+app.get('/consultar-prospectos-recientes', (req, res) => {
+    // Parámetros con valores por defecto
+    const pagina = req.query.pagina || 1;
+    const cantidadRegistros = req.query.cantidadRegistros || 50;
+    const periodo = req.query.periodo; // 1=hoy, 5=mes, 8=año, sin valor=todos
+    const tkUsuario = req.query.tkUsuario; // * para todos los ejecutivos, sin valor=solo mis prospectos
+    
+    console.log(`📋 Consultando prospectos - Página: ${pagina}, Registros: ${cantidadRegistros}, Período: ${periodo || 'todos'}, Usuario: ${tkUsuario || 'mis prospectos'}`);
+    
+    // Construir URL de la API de Upnify con parámetros dinámicos
+    let url = `https://api.upnify.com/v4/prospectos?pagina=${pagina}&cantidadRegistros=${cantidadRegistros}`;
+    
+    // Agregar período si se especifica
+    if (periodo) {
+        url += `&periodo=${periodo}`;
+    }
+    
+    // Agregar usuario si se especifica
+    if (tkUsuario) {
+        url += `&tkUsuario=${tkUsuario}`;
+    }
+    
+    console.log(`🔗 URL de consulta: ${url}`);
+    
+    https.get(url, { 
+        headers: { 
+            'token': tkSesion,
+            'User-Agent': 'UpnifIA/1.0'
+        } 
+    }, response => {
+        let data = '';
+        response.on('data', chunk => data += chunk);
+        response.on('end', () => {
+            try {
+                const prospectos = JSON.parse(data);
+                console.log(`✅ Prospectos obtenidos de Upnify: ${prospectos.length} registros`);
+                
+                // Formatear respuesta con información útil
+                const resultado = {
+                    total: prospectos.length,
+                    pagina: parseInt(pagina),
+                    cantidadRegistros: parseInt(cantidadRegistros),
+                    filtros: {
+                        periodo: periodo ? getPeriodoDescripcion(periodo) : 'Todos los períodos',
+                        ejecutivo: tkUsuario === '*' ? 'Todos los ejecutivos' : 'Mis prospectos'
+                    },
+                    prospectos: prospectos.map(prospecto => ({
+                        tkProspecto: prospecto.tkProspecto,
+                        nombre: prospecto.nombre,
+                        apellidos: prospecto.apellidos,
+                        contacto: prospecto.contacto,
+                        correo: prospecto.correo,
+                        telefono: prospecto.telefono,
+                        movil: prospecto.movil,
+                        fechaContacto: prospecto.fechaContacto,
+                        fechaUltimaModificacion: prospecto.fechaUltimaModificacion,
+                        ejecutivoNombre: prospecto.ejecutivoNombre,
+                        ultimoContacto: prospecto.ultimoContacto,
+                        ultimoContactoFechaHora: prospecto.ultimoContactoFechaHora,
+                        fase: prospecto.fase,
+                        faseColor: prospecto.faseColor,
+                        origen: prospecto.origen,
+                        pais: prospecto.pais,
+                        estado: prospecto.estado,
+                        empresa: prospecto.empresa,
+                        industria: prospecto.industria,
+                        tipo: prospecto.tipo,
+                        gasto: prospecto.gasto,
+                        periodo: prospecto.periodo,
+                        esCliente: prospecto.esCliente,
+                        descartado: prospecto.descartado,
+                        archivado: prospecto.archivado
+                    }))
+                };
+                
+                res.json(resultado);
+                
+            } catch (error) {
+                console.error('❌ Error parsing prospectos:', error);
+                res.status(500).json({ 
+                    error: 'Error processing prospects data',
+                    details: error.message 
+                });
+            }
+        });
+    }).on('error', error => {
+        console.error('❌ Error consultando prospectos:', error);
+        res.status(500).json({ 
+            error: 'Error connecting to Upnify API',
+            details: error.message 
+        });
+    });
+});
+
+// Función auxiliar para describir los períodos
+function getPeriodoDescripcion(periodo) {
+    switch (periodo) {
+        case '1': return 'Hoy';
+        case '5': return 'Mes actual';
+        case '8': return 'Año actual';
+        default: return `Período ${periodo}`;
+    }
+}
 
 // Iniciar servidor
 app.listen(port, '0.0.0.0', () => {
