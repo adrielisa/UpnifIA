@@ -36,6 +36,10 @@ paths:
                   type: string
                   description: Empresa donde trabaja el prospecto (opcional pero recomendado)
                   example: "Tecnología Avanzada SA"
+                puesto:
+                  type: string
+                  description: Cargo o puesto que ocupa en la empresa (opcional)
+                  example: "Gerente de Ventas"
                 movil:
                   type: string
                   description: Teléfono móvil (opcional, formato internacional recomendado)
