@@ -1,5 +1,7 @@
 const express = require('express');
 const https = require('https');
+const fs = require('fs');
+const path = require('path');
 const app = express();
 
 // Railway usa PORT environment variable
@@ -25,6 +27,20 @@ app.get('/', (req, res) => {
             'GET /test-upnify - Test de conectividad con Upnify'
         ]
     });
+});
+
+// 🔹 Servir el archivo OpenAPI para ChatGPT
+app.get('/openapi.yaml', (req, res) => {
+    console.log('📄 Serving OpenAPI specification...');
+    const openapiPath = path.join(__dirname, 'openapi.yaml');
+    
+    if (fs.existsSync(openapiPath)) {
+        res.setHeader('Content-Type', 'application/x-yaml');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.sendFile(openapiPath);
+    } else {
+        res.status(404).json({ error: 'OpenAPI file not found' });
+    }
 });
 
 // 🔹 Test de conectividad con Upnify
