@@ -8,7 +8,8 @@ servers:
 paths:
   /crear-prospecto-completo:
     post:
-      summary: Crear prospecto en Upnify CRM
+      summary: Crear prospecto en Upnify CRM con datos básicos
+      description: Crea un nuevo prospecto con información esencial. Los campos adicionales (empresa, puesto, etiquetas, fase, etc.) se asignan automáticamente con valores por defecto de Upnify.
       operationId: crearProspecto
       requestBody:
         required: true
@@ -20,60 +21,51 @@ paths:
               properties:
                 nombre:
                   type: string
+                  description: Nombre del prospecto
+                  example: "Juan Carlos"
                 apellidos:
                   type: string
+                  description: Apellidos del prospecto
+                  example: "García López"
                 correo:
                   type: string
                   format: email
-                telefono2:
-                  type: string
-                movil:
-                  type: string
+                  description: Correo electrónico del prospecto
+                  example: "juan.garcia@empresa.com"
                 empresa:
                   type: string
-                puesto:
+                  description: Empresa donde trabaja el prospecto (opcional pero recomendado)
+                  example: "Tecnología Avanzada SA"
+                movil:
                   type: string
-                calle:
-                  type: string
-                ciudad:
-                  type: string
-                idEstado:
-                  type: string
-                codigoPostal:
-                  type: string
-                titulo:
-                  type: string
-                sexo:
-                  type: string
-                  enum: [H, M]
-                url:
-                  type: string
-                colonia:
-                  type: string
-                idMunicipio:
-                  type: string
-                facebook:
-                  type: string
-                twitter:
-                  type: string
-                skype:
-                  type: string
-                linkedIn:
-                  type: string
-                googlePlus:
-                  type: string
-                etiquetas:
-                  type: string
+                  description: Teléfono móvil (opcional, formato internacional recomendado)
+                  example: "+525512345678"
+              additionalProperties: false
+              additionalProperties: false
       responses:
         '200':
           description: Prospecto creado exitosamente
-  /consultar-prospectos:
-    get:
-      summary: Consultar prospectos del día
-      operationId: consultarProspectos
-      responses:
-        '200':
-          description: Lista prospectos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: Indica si la creación fue exitosa
+                  status:
+                    type: integer
+                    description: Código de estado HTTP
+                  message:
+                    type: string
+                    description: Mensaje de confirmación
+                  prospecto:
+                    type: object
+                    description: Datos del prospecto creado
+        '400':
+          description: Datos inválidos o campos obligatorios faltantes
+        '409':
+          description: El prospecto ya existe (email duplicado)
   /consultar-ventas:
     get:
       summary: Consultar reportes de ventas con filtros flexibles
