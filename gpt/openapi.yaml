@@ -1,8 +1,18 @@
 openapi: 3.1.0
 info:
   title: UpnifIA - API completa para Upnify CRM
-  version: 1.0.1
-  description: API REST para crear prospectos y consultar ventas desde GPT.
+  version: 1.0.2
+  description: |
+    API REST para gestionar Upnify CRM desde ChatGPT.
+    
+    🔑 **IMPORTANTE**: Todos los endpoints requieren un token de sesión (tkSesion) que debe proporcionarse en cada petición.
+    
+    **Antes de usar cualquier función, SIEMPRE pregunta al usuario por su token de sesión de Upnify.**
+    
+    El usuario puede obtener su token desde:
+    - Su cuenta de Upnify → Configuración → API
+    
+    Ejemplo: "Para poder ayudarte, necesito tu token de sesión de Upnify. Puedes encontrarlo en tu cuenta de Upnify en Configuración > API. Por favor compártelo conmigo."
 servers:
   - url: https://upnifia-production.up.railway.app
 paths:
@@ -17,8 +27,12 @@ paths:
           application/json:
             schema:
               type: object
-              required: [nombre, apellidos, correo]
+              required: [tkSesion, nombre, apellidos, correo]
               properties:
+                tkSesion:
+                  type: string
+                  description: Token de sesión de Upnify del usuario (solicitar al usuario)
+                  example: "P07RTgwMkQ4RUMtN0I5RC00QUMyLTlFQzMtQ0MwRDY4MzVDMTE5"
                 nombre:
                   type: string
                   description: Nombre del prospecto
@@ -75,6 +89,13 @@ paths:
       summary: Consultar reportes de ventas con filtros flexibles
       operationId: consultarVentas
       parameters:
+        - name: tkSesion
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Token de sesión de Upnify del usuario
+          example: "P07RTgwMkQ4RUMtN0I5RC00QUMyLTlFQzMtQ0MwRDY4MzVDMTE5"
         - name: agrupacion
           in: query
           schema:
@@ -137,6 +158,13 @@ paths:
       summary: Consultar cobros pendientes con filtros
       operationId: consultarCobrosPendientes
       parameters:
+        - name: tkSesion
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Token de sesión de Upnify del usuario
+          example: "P07RTgwMkQ4RUMtN0I5RC00QUMyLTlFQzMtQ0MwRDY4MzVDMTE5"
         - name: agrupacion
           in: query
           schema:
@@ -203,6 +231,13 @@ paths:
       summary: Consultar prospectos con filtros de período y ejecutivo
       operationId: consultarProspectosRecientes
       parameters:
+        - name: tkSesion
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Token de sesión de Upnify del usuario
+          example: "P07RTgwMkQ4RUMtN0I5RC00QUMyLTlFQzMtQ0MwRDY4MzVDMTE5"
         - name: pagina
           in: query
           schema:
@@ -352,6 +387,13 @@ paths:
       summary: Buscar prospectos y clientes por nombre, correo o teléfono
       operationId: buscarContactos
       parameters:
+        - name: tkSesion
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Token de sesión de Upnify del usuario
+          example: "P07RTgwMkQ4RUMtN0I5RC00QUMyLTlFQzMtQ0MwRDY4MzVDMTE5"
         - name: buscar
           in: query
           required: true
@@ -438,8 +480,12 @@ paths:
           application/json:
             schema:
               type: object
-              required: [concepto, tkProspecto, monto, comision]
+              required: [tkSesion, concepto, tkProspecto, monto, comision]
               properties:
+                tkSesion:
+                  type: string
+                  description: Token de sesión de Upnify del usuario
+                  example: "P07RTgwMkQ4RUMtN0I5RC00QUMyLTlFQzMtQ0MwRDY4MzVDMTE5"
                 concepto:
                   type: string
                   description: Descripción de la oportunidad
