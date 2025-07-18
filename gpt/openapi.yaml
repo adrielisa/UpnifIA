@@ -70,12 +70,14 @@ paths:
   /consultar-prospectos:
     get:
       summary: Consultar prospectos del día
+      operationId: consultarProspectos
       responses:
         '200':
           description: Lista prospectos
   /consultar-ventas:
     get:
       summary: Consultar ventas mensuales
+      operationId: consultarVentas
       responses:
         '200':
           description: Reporte de ventas actual

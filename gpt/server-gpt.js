@@ -43,6 +43,20 @@ app.get('/openapi.yaml', (req, res) => {
     }
 });
 
+// 🔹 Servir el archivo OpenAPI para ChatGPT
+app.get('/openapi.yaml', (req, res) => {
+    console.log('📄 Serving OpenAPI specification...');
+    const openapiPath = path.join(__dirname, 'openapi.yaml');
+    
+    if (fs.existsSync(openapiPath)) {
+        res.setHeader('Content-Type', 'application/x-yaml');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.sendFile(openapiPath);
+    } else {
+        res.status(404).json({ error: 'OpenAPI file not found' });
+    }
+});
+
 // 🔹 Test de conectividad con Upnify
 app.get('/test-upnify', (req, res) => {
     console.log('🧪 Testing Upnify connection...');
