@@ -31,7 +31,7 @@ app.get('/', (req, res) => {
     res.json({
         status: 'OK',
         service: 'UpnifIA GPT API',
-        version: '1.1.0',
+        version: '1.1.1',
         timestamp: new Date().toISOString(),
         message: '🔑 Todos los endpoints requieren número identificador (numeroIdentificador) del usuario',
         endpoints: [
@@ -50,7 +50,7 @@ app.get('/', (req, res) => {
 
 // 🔹 Servir el archivo OpenAPI para ChatGPT con cache-busting
 app.get('/openapi.yaml', (req, res) => {
-    console.log('📄 Serving OpenAPI specification v1.1.0 with numeroIdentificador support...');
+    console.log('📄 Serving OpenAPI specification v1.1.1 with numeroIdentificador support...');
     const openapiPath = path.join(__dirname, 'openapi.yaml');
     
     if (fs.existsSync(openapiPath)) {
@@ -59,7 +59,7 @@ app.get('/openapi.yaml', (req, res) => {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
-        res.setHeader('X-OpenAPI-Version', '1.1.0');
+        res.setHeader('X-OpenAPI-Version', '1.1.1');
         res.setHeader('X-Last-Modified', new Date().toISOString());
         res.sendFile(openapiPath);
     } else {

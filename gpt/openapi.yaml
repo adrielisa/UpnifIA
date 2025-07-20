@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: UpnifIA - API completa para Upnify CRM
-  version: 1.1.0
+  version: 1.1.1
   description: |
     API REST para gestionar Upnify CRM desde ChatGPT.
     
@@ -10,7 +10,12 @@ info:
     **Antes de usar cualquier función, SIEMPRE pregunta al usuario por su número identificad  /buscar-contactos:
     get:
       summary: Buscar prospectos y clientes por nombre, correo o teléfono
-                   required: [numeroIdentificador, concepto, tkProspecto, monto, comision]
+                        required: [numeroIdentificador, concepto, tkProspecto, monto, comision]
+              properties:
+                numeroIdentificador:
+                  type: string
+                  description: Número identificador único de Upnify del usuario
+                  example: "P07RTgwMkQ4RUMtN0I5RC00QUMyLTlFQzMtQ0MwRDY4MzVDMLE5"   required: [numeroIdentificador, concepto, tkProspecto, monto, comision]
               properties:
                 numeroIdentificador:
                   type: string
@@ -403,12 +408,12 @@ paths:
       summary: Buscar prospectos y clientes por nombre, correo o teléfono
       operationId: buscarContactos
       parameters:
-        - name: tkSesion
+        - name: numeroIdentificador
           in: query
           required: true
           schema:
             type: string
-          description: Token de sesión de Upnify del usuario
+          description: Número identificador único de Upnify del usuario
           example: "P07RTgwMkQ4RUMtN0I5RC00QUMyLTlFQzMtQ0MwRDY4MzVDMTE5"
         - name: buscar
           in: query
