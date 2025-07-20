@@ -12,30 +12,45 @@ const apiUrl = 'https://api.upnify.com/v4';
 
 app.use(express.json());
 
+// 🔹 Helper function para convertir numeroIdentificador a tkSesion
+function extraerToken(req) {
+    // Para requests GET (query parameters)
+    const numeroIdentificador = req.query?.numeroIdentificador || req.body?.numeroIdentificador;
+    
+    if (numeroIdentificador) {
+        console.log(`🔄 Convirtiendo numeroIdentificador a tkSesion: ***${numeroIdentificador.slice(-8)}`);
+        return numeroIdentificador; // En realidad es el mismo valor, solo cambio de nombre
+    }
+    
+    // Fallback: también acepta tkSesion para retrocompatibilidad
+    return req.query?.tkSesion || req.body?.tkSesion;
+}
+
 // 🔹 Health check endpoint (importante para Railway)
 app.get('/', (req, res) => {
     res.json({
         status: 'OK',
         service: 'UpnifIA GPT API',
-        version: '1.0.2',
+        version: '1.1.0',
         timestamp: new Date().toISOString(),
-        message: '🔑 Todos los endpoints requieren token de sesión (tkSesion) del usuario',
+        message: '🔑 Todos los endpoints requieren número identificador (numeroIdentificador) del usuario',
         endpoints: [
-            'POST /crear-prospecto-completo - Crear prospecto en Upnify (requiere tkSesion)',
-            'GET /consultar-ventas - Consultar ventas con filtros flexibles (requiere tkSesion)',
-            'GET /consultar-cobros-pendientes - Consultar cobros pendientes (requiere tkSesion)',
-            'GET /consultar-prospectos-recientes - Consultar prospectos con filtros (requiere tkSesion)',
-            'GET /buscar-contactos - Buscar prospectos y clientes (requiere tkSesion)',
-            'POST /crear-oportunidad - Crear oportunidad para un prospecto (requiere tkSesion)',
-            'GET /test-upnify - Test de conectividad con Upnify (requiere tkSesion)'
+            'POST /crear-prospecto-completo - Crear prospecto en Upnify (requiere numeroIdentificador)',
+            'GET /consultar-ventas - Consultar ventas con filtros flexibles (requiere numeroIdentificador)',
+            'GET /consultar-cobros-pendientes - Consultar cobros pendientes (requiere numeroIdentificador)',
+            'GET /consultar-prospectos-recientes - Consultar prospectos con filtros (requiere numeroIdentificador)',
+            'GET /buscar-contactos - Buscar prospectos y clientes (requiere numeroIdentificador)',
+            'POST /crear-oportunidad - Crear oportunidad para un prospecto (requiere numeroIdentificador)',
+            'GET /test-upnify - Test de conectividad con Upnify (requiere numeroIdentificador)'
         ],
-        note: 'Los usuarios pueden obtener su token desde Upnify → Configuración → API'
+        note: 'Los usuarios pueden obtener su número identificador desde Upnify → Configuración → API',
+        improvement: '🚀 Ahora usa "numeroIdentificador" para mejor compatibilidad con ChatGPT'
     });
 });
 
 // 🔹 Servir el archivo OpenAPI para ChatGPT con cache-busting
 app.get('/openapi.yaml', (req, res) => {
-    console.log('📄 Serving OpenAPI specification v1.0.2 with tkSesion support...');
+    console.log('📄 Serving OpenAPI specification v1.1.0 with numeroIdentificador support...');
     const openapiPath = path.join(__dirname, 'openapi.yaml');
     
     if (fs.existsSync(openapiPath)) {
@@ -44,7 +59,7 @@ app.get('/openapi.yaml', (req, res) => {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
-        res.setHeader('X-OpenAPI-Version', '1.0.2');
+        res.setHeader('X-OpenAPI-Version', '1.1.0');
         res.setHeader('X-Last-Modified', new Date().toISOString());
         res.sendFile(openapiPath);
     } else {
@@ -82,15 +97,15 @@ app.get('/openapi-debug', (req, res) => {
 
 // 🔹 Test de conectividad con Upnify
 app.get('/test-upnify', (req, res) => {
-    const tkSesion = req.query.tkSesion;
+    const tkSesion = extraerToken(req);
     
     // Validar token de sesión
     if (!tkSesion) {
-        console.log('❌ Token de sesión no proporcionado en test-upnify');
+        console.log('❌ Número identificador no proporcionado en test-upnify');
         return res.status(400).json({ 
             success: false, 
-            error: 'tkSesion es obligatorio. Proporciona tu token de sesión de Upnify como parámetro.',
-            help: 'Ejemplo: /test-upnify?tkSesion=TU_TOKEN_AQUI'
+            error: 'numeroIdentificador es obligatorio. Proporciona tu número identificador de Upnify como parámetro.',
+            help: 'Ejemplo: /test-upnify?numeroIdentificador=TU_NUMERO_AQUI'
         });
     }
     
@@ -158,7 +173,7 @@ app.get('/test-upnify', (req, res) => {
 // 🔹 Endpoint principal para crear prospecto con manejo de errores mejorado
 app.post('/crear-prospecto-completo', (req, res) => {
     const payload = req.body;
-    const tkSesion = payload.tkSesion;
+    const tkSesion = extraerToken(req);
     
     console.log('📝 Intentando crear prospecto:', {
         usuario: tkSesion ? `***${tkSesion.slice(-8)}` : 'NO PROPORCIONADO',
@@ -169,11 +184,11 @@ app.post('/crear-prospecto-completo', (req, res) => {
     
     // Validar token de sesión
     if (!tkSesion) {
-        console.log('❌ Token de sesión no proporcionado');
+        console.log('❌ Número identificador no proporcionado');
         return res.status(400).json({ 
             success: false, 
-            error: 'tkSesion es obligatorio. Proporciona tu token de sesión de Upnify.',
-            help: 'Puedes obtener tu token desde tu cuenta de Upnify en Configuración > API'
+            error: 'numeroIdentificador es obligatorio. Proporciona tu número identificador de Upnify.',
+            help: 'Puedes obtener tu número identificador desde tu cuenta de Upnify en Configuración > API'
         });
     }
     
@@ -185,10 +200,10 @@ app.post('/crear-prospecto-completo', (req, res) => {
         });
     }
 
-    // Crear FormData excluyendo el tkSesion (no debe enviarse en el body)
+    // Crear FormData excluyendo el numeroIdentificador y tkSesion (no deben enviarse en el body)
     const formData = new URLSearchParams();
     for (const [key, value] of Object.entries(payload)) {
-        if (key !== 'tkSesion' && value !== undefined && value !== null) {
+        if (key !== 'numeroIdentificador' && key !== 'tkSesion' && value !== undefined && value !== null) {
             formData.append(key, value);
         }
     }
@@ -256,15 +271,15 @@ app.post('/crear-prospecto-completo', (req, res) => {
 
 // 🔹 Consultar ventas con filtros flexibles
 app.get('/consultar-ventas', (req, res) => {
-    const tkSesion = req.query.tkSesion;
+    const tkSesion = extraerToken(req);
     
     // Validar token de sesión
     if (!tkSesion) {
-        console.log('❌ Token de sesión no proporcionado en consultar-ventas');
+        console.log('❌ Número identificador no proporcionado en consultar-ventas');
         return res.status(400).json({ 
             success: false, 
-            error: 'tkSesion es obligatorio. Proporciona tu token de sesión de Upnify.',
-            help: 'Puedes obtener tu token desde tu cuenta de Upnify en Configuración > API'
+            error: 'numeroIdentificador es obligatorio. Proporciona tu número identificador de Upnify.',
+            help: 'Puedes obtener tu número identificador desde tu cuenta de Upnify en Configuración > API'
         });
     }
     
@@ -304,15 +319,15 @@ app.get('/consultar-ventas', (req, res) => {
 
 // 🔹 Consultar cobros pendientes con filtros
 app.get('/consultar-cobros-pendientes', (req, res) => {
-    const tkSesion = req.query.tkSesion;
+    const tkSesion = extraerToken(req);
     
     // Validar token de sesión
     if (!tkSesion) {
-        console.log('❌ Token de sesión no proporcionado en consultar-cobros-pendientes');
+        console.log('❌ Número identificador no proporcionado en consultar-cobros-pendientes');
         return res.status(400).json({ 
             success: false, 
-            error: 'tkSesion es obligatorio. Proporciona tu token de sesión de Upnify.',
-            help: 'Puedes obtener tu token desde tu cuenta de Upnify en Configuración > API'
+            error: 'numeroIdentificador es obligatorio. Proporciona tu número identificador de Upnify.',
+            help: 'Puedes obtener tu número identificador desde tu cuenta de Upnify en Configuración > API'
         });
     }
     
@@ -350,15 +365,15 @@ app.get('/consultar-cobros-pendientes', (req, res) => {
 
 // 🔹 Consultar prospectos con filtros de período y ejecutivo
 app.get('/consultar-prospectos-recientes', (req, res) => {
-    const tkSesion = req.query.tkSesion;
+    const tkSesion = extraerToken(req);
     
     // Validar token de sesión
     if (!tkSesion) {
-        console.log('❌ Token de sesión no proporcionado en consultar-prospectos-recientes');
+        console.log('❌ Número identificador no proporcionado en consultar-prospectos-recientes');
         return res.status(400).json({ 
             success: false, 
-            error: 'tkSesion es obligatorio. Proporciona tu token de sesión de Upnify.',
-            help: 'Puedes obtener tu token desde tu cuenta de Upnify en Configuración > API'
+            error: 'numeroIdentificador es obligatorio. Proporciona tu número identificador de Upnify.',
+            help: 'Puedes obtener tu número identificador desde tu cuenta de Upnify en Configuración > API'
         });
     }
     
@@ -467,17 +482,17 @@ function getPeriodoDescripcion(periodo) {
 
 // 🔹 Buscar contactos (prospectos y clientes) por nombre, correo o teléfono
 app.get('/buscar-contactos', (req, res) => {
-    const tkSesion = req.query.tkSesion;
+    const tkSesion = extraerToken(req);
     const buscar = req.query.buscar;
     const cantidadRegistros = req.query.cantidadRegistros || 10;
     
     // Validar token de sesión
     if (!tkSesion) {
-        console.log('❌ Token de sesión no proporcionado en buscar-contactos');
+        console.log('❌ Número identificador no proporcionado en buscar-contactos');
         return res.status(400).json({ 
             success: false, 
-            error: 'tkSesion es obligatorio. Proporciona tu token de sesión de Upnify.',
-            help: 'Puedes obtener tu token desde tu cuenta de Upnify en Configuración > API'
+            error: 'numeroIdentificador es obligatorio. Proporciona tu número identificador de Upnify.',
+            help: 'Puedes obtener tu número identificador desde tu cuenta de Upnify en Configuración > API'
         });
     }
     
@@ -576,7 +591,8 @@ app.get('/buscar-contactos', (req, res) => {
 
 // 🔹 Crear oportunidad para un prospecto
 app.post('/crear-oportunidad', (req, res) => {
-    const { tkSesion, concepto, tkProspecto, monto, comision } = req.body;
+    const { concepto, tkProspecto, monto, comision } = req.body;
+    const tkSesion = extraerToken(req);
     
     console.log('💼 Intentando crear oportunidad:', {
         usuario: tkSesion ? `***${tkSesion.slice(-8)}` : 'NO PROPORCIONADO',
@@ -588,11 +604,11 @@ app.post('/crear-oportunidad', (req, res) => {
     
     // Validar token de sesión
     if (!tkSesion) {
-        console.log('❌ Token de sesión no proporcionado');
+        console.log('❌ Número identificador no proporcionado');
         return res.status(400).json({ 
             success: false, 
-            error: 'tkSesion es obligatorio. Proporciona tu token de sesión de Upnify.',
-            help: 'Puedes obtener tu token desde tu cuenta de Upnify en Configuración > API'
+            error: 'numeroIdentificador es obligatorio. Proporciona tu número identificador de Upnify.',
+            help: 'Puedes obtener tu número identificador desde tu cuenta de Upnify en Configuración > API'
         });
     }
     
@@ -698,7 +714,8 @@ app.post('/crear-oportunidad', (req, res) => {
 app.listen(port, '0.0.0.0', () => {
     console.log(`🚀 UpnifIA GPT API iniciado en puerto ${port}`);
     console.log(`📅 Timestamp: ${new Date().toISOString()}`);
-    console.log(`🔑 Modo: Token dinámico por usuario`);
-    console.log(`📝 Instrucción: Cada usuario debe proporcionar su tkSesion`);
+    console.log(`🔑 Modo: Número identificador dinámico por usuario`);
+    console.log(`📝 Instrucción: Cada usuario debe proporcionar su numeroIdentificador`);
     console.log(`🌐 Health check: http://localhost:${port}/`);
+    console.log(`🚀 Nueva versión 1.1.0: Cambio de "tkSesion" a "numeroIdentificador" para mejor compatibilidad con ChatGPT`);
 });

@@ -1,18 +1,34 @@
 openapi: 3.1.0
 info:
   title: UpnifIA - API completa para Upnify CRM
-  version: 1.0.2
+  version: 1.1.0
   description: |
     API REST para gestionar Upnify CRM desde ChatGPT.
     
-    🔑 **IMPORTANTE**: Todos los endpoints requieren un token de sesión (tkSesion) que debe proporcionarse en cada petición.
+    🔑 **IMPORTANTE**: Todos los endpoints requieren un número identificador único que debe proporcionarse en cada petición.
     
-    **Antes de usar cualquier función, SIEMPRE pregunta al usuario por su token de sesión de Upnify.**
+    **Antes de usar cualquier función, SIEMPRE pregunta al usuario por su número identificad  /buscar-contactos:
+    get:
+      summary: Buscar prospectos y clientes por nombre, correo o teléfono
+                   required: [numeroIdentificador, concepto, tkProspecto, monto, comision]
+              properties:
+                numeroIdentificador:
+                  type: string
+                  description: Número identificador único de Upnify del usuario
+                  example: "P07RTgwMkQ4RUMtN0I5RC00QUMyLTlFQzMtQ0MwRDY4MzVDMLE5"tionId: buscarContactos
+      parameters:
+        - name: numeroIdentificador
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Número identificador único de Upnify del usuario
+          example: "P07RTgwMkQ4RUMtN0I5RC00QUMyLTlFQzMtQ0MwRDY4MzVDMTE5".**
     
-    El usuario puede obtener su token desde:
+    El usuario puede obtener su número identificador desde:
     - Su cuenta de Upnify → Configuración → API
     
-    Ejemplo: "Para poder ayudarte, necesito tu token de sesión de Upnify. Puedes encontrarlo en tu cuenta de Upnify en Configuración > API. Por favor compártelo conmigo."
+    Ejemplo: "Para poder ayudarte, necesito tu número identificador de Upnify. Puedes encontrarlo en tu cuenta de Upnify en Configuración > API. Por favor compártelo conmigo."
 servers:
   - url: https://upnifia-production.up.railway.app
 paths:
@@ -27,11 +43,11 @@ paths:
           application/json:
             schema:
               type: object
-              required: [tkSesion, nombre, apellidos, correo]
+              required: [numeroIdentificador, nombre, apellidos, correo]
               properties:
-                tkSesion:
+                numeroIdentificador:
                   type: string
-                  description: Token de sesión de Upnify del usuario (solicitar al usuario)
+                  description: Número identificador único de Upnify del usuario (solicitar al usuario)
                   example: "P07RTgwMkQ4RUMtN0I5RC00QUMyLTlFQzMtQ0MwRDY4MzVDMTE5"
                 nombre:
                   type: string
@@ -89,12 +105,12 @@ paths:
       summary: Consultar reportes de ventas con filtros flexibles
       operationId: consultarVentas
       parameters:
-        - name: tkSesion
+        - name: numeroIdentificador
           in: query
           required: true
           schema:
             type: string
-          description: Token de sesión de Upnify del usuario
+          description: Número identificador único de Upnify del usuario
           example: "P07RTgwMkQ4RUMtN0I5RC00QUMyLTlFQzMtQ0MwRDY4MzVDMTE5"
         - name: agrupacion
           in: query
@@ -158,12 +174,12 @@ paths:
       summary: Consultar cobros pendientes con filtros
       operationId: consultarCobrosPendientes
       parameters:
-        - name: tkSesion
+        - name: numeroIdentificador
           in: query
           required: true
           schema:
             type: string
-          description: Token de sesión de Upnify del usuario
+          description: Número identificador único de Upnify del usuario
           example: "P07RTgwMkQ4RUMtN0I5RC00QUMyLTlFQzMtQ0MwRDY4MzVDMTE5"
         - name: agrupacion
           in: query
@@ -231,12 +247,12 @@ paths:
       summary: Consultar prospectos con filtros de período y ejecutivo
       operationId: consultarProspectosRecientes
       parameters:
-        - name: tkSesion
+        - name: numeroIdentificador
           in: query
           required: true
           schema:
             type: string
-          description: Token de sesión de Upnify del usuario
+          description: Número identificador único de Upnify del usuario
           example: "P07RTgwMkQ4RUMtN0I5RC00QUMyLTlFQzMtQ0MwRDY4MzVDMTE5"
         - name: pagina
           in: query
