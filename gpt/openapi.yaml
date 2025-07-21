@@ -5,9 +5,9 @@ info:
   description: |
     API REST para gestionar Upnify CRM desde ChatGPT.
     
-    🔑 **IMPORTANTE**: Todos los endpoints requieren un número identificador único que debe proporcionarse en cada petición.
+     **IMPORTANTE**: Todos los endpoints requieren un número identificador único que debe proporcionarse en cada petición.
     
-    **Antes de usar cualquier función, SIEMPRE pregunta al usuario por su número identificad  /buscar-contactos:
+    **Antes de usar cualquier función, SIEMPRE pregunta al usuario por su número identificador  /buscar-contactos:
     get:
       summary: Buscar prospectos y clientes por nombre, correo o teléfono
                         required: [numeroIdentificador, concepto, tkProspecto, monto, comision]

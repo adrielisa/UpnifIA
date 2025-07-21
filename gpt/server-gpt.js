@@ -283,7 +283,6 @@ app.get('/consultar-ventas', (req, res) => {
         });
     }
     
-    // Parámetros con valores por defecto
     const agrupacion = req.query.agrupacion || 1; // Por ejecutivo por defecto
     const periodicidad = req.query.periodicidad || 4; // Mensual por defecto
     const anio = req.query.anio || new Date().getFullYear(); // Año actual por defecto
