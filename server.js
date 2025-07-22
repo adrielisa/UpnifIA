@@ -2,6 +2,7 @@ const express = require('express');
 const https = require('https');
 const app = express();
 const port = 3000;
+const fetch = require('node-fetch');
 
 // Este es tu token real de Upnify
 const tkSesion = 'P07RTgwMkQ4RUMtN0I5RC00QUMyLTlFQzMtQ0MwRDY4MzVDMTE5';
