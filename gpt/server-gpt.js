@@ -4,10 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const app = express();
 
-// Railway usa PORT environment variable
 const port = process.env.PORT || 3001;
 
-// URL base de la API de Upnify
 const apiUrl = 'https://api.upnify.com/v4';
 
 app.use(express.json());

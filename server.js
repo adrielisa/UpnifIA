@@ -101,3 +101,48 @@ app.post('/run_tool', (req, res) => {
 });
 
 app.listen(port, () => console.log(`UpnifIA MCP corriendo en http://localhost:${port}`));
+
+app.post('/assistant-callback', async (req, res) => {
+    const { function_call } = req.body;
+    if (!function_call) return res.status(400).json({ error: 'No function_call recibido' });
+
+    console.log(`➡️ Function call GPT: ${function_call.name}`);
+
+    const args = JSON.parse(function_call.arguments);
+
+    let endpoint;
+    switch (function_call.name) {
+        case 'crear_prospecto_completo':
+            endpoint = '/run_tool';
+            break;
+        default:
+            return res.status(400).json({ error: 'Function no registrada' });
+    }
+
+    // Prepara payload para tu propio backend (run_tool)
+    const payload = {
+        name: 'crear_prospecto',
+        input: {
+            nombre: args.nombre,
+            apellidos: args.apellidos,
+            correo: args.correo
+        }
+    };
+
+    console.log(`📡 Llamando ${endpoint} con:`, payload);
+
+    try {
+        const response = await fetch(`http://localhost:${port}${endpoint}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        console.log('✅ Resultado enviado a ChatGPT:', data);
+        res.json({ success: true, result: data });
+    } catch (error) {
+        console.error('❌ Error:', error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
