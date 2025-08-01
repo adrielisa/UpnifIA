@@ -2,7 +2,7 @@ const express = require('express');
 const https = require('https');
 const app = express();
 const port = 3000;
-const tkSesion = 'P07RTgwMkQ4RUMtN0I5RC00QUMyLTlFQzMtQ0MwRDY4MzVDMTE5';
+const tkSesion = 'Aqui_va_el_token_de_sesion'; // Reemplazar con el token de sesión real
 const apiUrl = 'https://api.upnify.com/v4';
 
 app.use(express.json());
